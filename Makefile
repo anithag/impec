@@ -1,6 +1,6 @@
 MAIN=impec
 
-OBJS = ast.cmo lexer.cmo parser.cmo cast.cmo ctranslator.cmo main.cmo
+OBJS = ast.cmo lexer.cmo parser.cmo cast.cmo ctranslator.cmo cprinter.cmo main.cmo
 
 %.cmo : %.ml
 	ocamlc -g -c $<
@@ -25,4 +25,4 @@ parser.mli : parser.mly
 	ocamlyacc -q $<
 
 clean:
-	rm -f *.cmo *.cmi lexer.ml parser.ml parser.mli $(MAIN)
+	rm -f *.cmo *.cmi lexer.ml parser.ml parser.mli $(MAIN) app.c

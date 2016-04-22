@@ -10,3 +10,4 @@ type ctype =
 
 and  ccontext = ctype VarLocMap.t
 
+type cprogram = ccontext * ccontext
