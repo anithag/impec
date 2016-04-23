@@ -2,6 +2,7 @@ open Ast
 open Cast
 open Ctranslator
 open Cprinter
+open Helper
 
 exception MainError
 
@@ -20,6 +21,7 @@ let () =
       Format.printf "Syntax error at line %d\n" pos.Lexing.pos_lnum;
       exit 1 in
 
+  let eflatstmt = Helper.flattenseq estmt in
   let cntxt = Ctranslator.translatetoCcontext gammaenc in
   let _ = Cprinter.printCprog  (cntxt, cntxt) in
    ()

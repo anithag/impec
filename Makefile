@@ -1,6 +1,6 @@
 MAIN=impec
 
-OBJS = ast.cmo lexer.cmo parser.cmo cast.cmo ctranslator.cmo cprinter.cmo main.cmo
+OBJS = ast.cmo lexer.cmo parser.cmo cast.cmo ctranslator.cmo cprinter.cmo helper.cmo main.cmo
 
 %.cmo : %.ml
 	ocamlc -g -c $<

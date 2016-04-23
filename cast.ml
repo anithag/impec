@@ -10,4 +10,24 @@ type ctype =
 
 and  ccontext = ctype VarLocMap.t
 
-type cprogram = ccontext * ccontext
+type cexp = 
+ |CConst of int
+ |CVar of var
+ |CLoc of var
+ |CPlus of cexp * cexp
+ |CModulo of cexp * cexp
+ |CEq of cexp * cexp
+ |CNeq of cexp * cexp
+ |CDeref of cexp
+ |CLambda of cexp list * cstmt
+ 
+and cstmt = 
+   CAssign of var * cexp
+ |CUpdate of cexp * cexp
+ |CSeq of cstmt list
+ |CWhile of cexp * cstmt
+ |CIf of cexp * cstmt * cstmt
+ |CCall of cexp
+ |CSkip
+
+type cprogram = ccontext * cstmt

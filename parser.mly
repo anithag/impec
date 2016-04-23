@@ -74,7 +74,7 @@ stmt : IF bexp THEN stmt ELSE stmt ENDIF  	{ EIf($2, $4, $6) }
      | exp UPDATE exp 		    		{ EUpdate($1, $3) }
      | OUTPUT LPAREN CHANNEL COMMA aexp RPAREN  { EOutput($3, $5) }
      | CALL LPAREN exp RPAREN 	    		{ ECall($3) }
-     | SET LPAREN VAR RPAREN        		{ ESet($3) }
+     | SET LPAREN LOC 	RPAREN        		{ ESet($3) }
 
 
 exp : bexp 				{ $1 }
@@ -87,7 +87,7 @@ bexp: TRUE			  			 { ETrue  }
     | FALSE                        			 { EFalse }
     | aexp EQUALS aexp 					 { EEq($1, $3) }
     | aexp NEQUALS aexp 				 { ENeq($1, $3) }
-    | ISUNSET LPAREN VAR RPAREN   			 { EIsunset($3) }
+    | ISUNSET LPAREN LOC	RPAREN   			 { EIsunset($3) }
 
 aexp: VAR                          { EVar $1}
     | INTEGER                      { EConstant($1) }

@@ -74,7 +74,7 @@ type encexp =
   | EEq of encexp * encexp            (* e1 = e2 *) 
   | ENeq of encexp * encexp            (* e1 != e2 *) 
   | EDeref of encexp
-  | EIsunset of var
+  | EIsunset of int
 
 and  encstmt = 
    EIf of encexp * encstmt * encstmt 
@@ -87,7 +87,7 @@ and  encstmt =
   |EWhile of encexp * encstmt
   |EOutput of channel * encexp
   |ECall of encexp
-  |ESet of var
+  |ESet of int
 
 type progbody = Encexp of encexp | Encstmt of encstmt 
 type program = enccontext * encstmt 
