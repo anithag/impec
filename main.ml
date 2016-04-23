@@ -23,5 +23,6 @@ let () =
 
   let eflatstmt = Helper.flattenseq estmt in
   let cntxt = Ctranslator.translatetoCcontext gammaenc in
+  let cstmtlist = Ctranslator.translatetoCstmt (EESeq eflatstmt) in
   let _ = Cprinter.printCprog  (cntxt, cntxt) in
    ()
