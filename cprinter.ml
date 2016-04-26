@@ -24,13 +24,16 @@ let rec printSingleCtype oc (variable, ctyp, isrec) = match ctyp with
 							()
   | CcondRef mu -> Printf.fprintf oc "bool * %a" printvar (variable, isrec)
 					(* FIXME: Pointers to function pointers are broken *)
-  | CFunc (mu, pre, post) -> Printf.fprintf oc "void (* %a )() " printvar (variable, isrec)
+  | CFunc (pre, post) -> Printf.fprintf oc "void (* %a )() " printvar (variable, isrec)
  
 let printCtypes oc cntxt =
   VarLocMap.iter (fun key value -> printSingleCtype oc (key,value, false)) cntxt
+
 
 let printCprog cprog  =
   (* let oc = open_out_gen [Open_creat; Open_text; Open_append] 0o640 "app.c" in *)
   let oc = open_out "app.c" in
   let _  = printCtypes oc (fst cprog) in
+  let ec = open_out "Enclave.c" in
+  (* let _ = printCEnclave ec (snd cprog) in *)
   close_out oc

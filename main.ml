@@ -9,7 +9,7 @@ exception MainError
 let () =
   let _ =
     if (Array.length Sys.argv < 2) || (Array.length Sys.argv > 2) then
-      (Format.printf "Usage: autopar <file>\n";
+      (Format.printf "Usage: impec <file>\n";
        exit 0) in
   let filearg = 1 in
   let file = open_in (Sys.argv.(filearg)) in
@@ -23,6 +23,6 @@ let () =
 
   let eflatstmt = Helper.flattenseq estmt in
   let cntxt = Ctranslator.translatetoCcontext gammaenc in
-  let cstmtlist = Ctranslator.translatetoCstmt (EESeq eflatstmt) in
+  let (_, cstmtlist) = Ctranslator.translatetoCstmt (EESeq eflatstmt)  gammaenc in
   let _ = Cprinter.printCprog  (cntxt, cntxt) in
    ()

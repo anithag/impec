@@ -56,6 +56,7 @@ rule token = parse
 | "do"    { DO }
 | "end"   {END}
 | "call"  {CALL}
+| "enclave" {ENCLAVE_ENTRY}
 | "set"   {SET}
 | "int"   { INT } 
 | "bool"  { BOOL } 

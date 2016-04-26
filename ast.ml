@@ -88,6 +88,7 @@ and  encstmt =
   |EOutput of channel * encexp
   |ECall of encexp
   |ESet of int
+  |EEnclave of int * encstmt
 
 type progbody = Encexp of encexp | Encstmt of encstmt 
 type program = enccontext * encstmt 

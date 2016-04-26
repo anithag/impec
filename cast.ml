@@ -6,7 +6,7 @@ type ctype =
   | CBool				(* bool *)
   | CcondRef of mode 			(* cond *)
   | CRef of mode * reftype * ctype 	(* tau ref *)
-  | CFunc of mode* ccontext * ccontext  (* func *)
+  | CFunc of ccontext * ccontext  	(* func *)
 
 and  ccontext = ctype VarLocMap.t
 
@@ -19,7 +19,7 @@ type cexp =
  |CEq of cexp * cexp
  |CNeq of cexp * cexp
  |CDeref of cexp
- |CLambda of cexp list * cstmt
+ |CLambda of mode * var* (varloc* ctype) list * cstmt
  
 and cstmt = 
    CAssign of var * cexp
@@ -27,7 +27,7 @@ and cstmt =
  |CSeq of cstmt list
  |CWhile of cexp * cstmt
  |CIf of cexp * cstmt * cstmt
- |CCall of cexp
+ |CCall of var   			(* Function name *) 
  |CSkip
 
 type cprogram = ccontext * cstmt
