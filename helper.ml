@@ -23,6 +23,9 @@ and flattenexp eexp = match eexp with
   | ELam(mu, pre, kpre, p, u, post, kpost, q, s) -> ELam(mu, pre, kpre, p, u, post, kpost, q, EESeq (flattenseq s))
   | _ -> eexp
 
+let get_return_struct_name = function
+  | CStruct (stname, memlist) -> stname
+  | _ -> raise (HelperError "Expected structure")
 
 let get_fname = function
  |CLambda (mu, f, _ ,_,_) -> f

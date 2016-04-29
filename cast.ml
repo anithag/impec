@@ -31,7 +31,6 @@ and cstmt =
  |CIf of cexp * cstmt * cstmt
  |CSkip
  |CRet of cexp				(* Return statement *)
- |CCallstmt
  |CCall of var *  cexp  		(* Function name and return name *) 
 
 

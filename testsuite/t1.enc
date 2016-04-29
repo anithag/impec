@@ -1,3 +1,4 @@
 l10:int_low^n ref^mut_low 
 
-l1<-10
+enclave(1, l10<-10)
+

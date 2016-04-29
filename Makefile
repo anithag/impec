@@ -25,4 +25,4 @@ parser.mli : parser.mly
 	ocamlyacc -q $<
 
 clean:
-	rm -f *.cmo *.cmi lexer.ml parser.ml parser.mli $(MAIN) app.c
+	rm -f *.cmo *.cmi lexer.ml parser.ml parser.mli $(MAIN) app.c Enclave.c
