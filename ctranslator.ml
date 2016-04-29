@@ -23,7 +23,7 @@ let rec translatetoCexp eexp gammaenc = match eexp with
   | EConstant n -> (gammaenc, CConst n)
   | ELam(mu, pre, kpre, p, u, post, kpost, q, s) -> let (gammaenc', cs) = translatetoCstmt s gammaenc in 
 							(* FIXME: What about return type? *)
-						(gammaenc', CLambda (mu, next_fvar (), (translatetoCargs pre), cs))
+						(gammaenc', CLambda (mu, next_fvar true, (translatetoCargs pre), (translatetoCargs post), cs))
   | EPlus (l,r) -> let (gammaencl, cl) =  (translatetoCexp l gammaenc) in
 		   let (gammaencr, cr) =  (translatetoCexp r gammaencl) in
 		   (gammaencr, CPlus (cl, cr)) 
@@ -67,17 +67,31 @@ and translatetoCstmt estmt gammaenc = match estmt with
 		  (gammaenc'',	CWhile (ce, cs))
 
   |EOutput (_, e) -> (gammaenc, CSkip)
-  |ECall f -> let (gammaenc', func) = (translatetoCexp f gammaenc) in
+  |ECall f -> let (gammaenc', cfunc) = (translatetoCexp f gammaenc) in
 	      (* get function name *)
-	      let fname = get_fname func in
-		(gammaenc', CCall fname)
+	      let fname = get_fname cfunc in
+		(* Prepare for return values *)
+		(* FIXME: What if cfunc is a variable *)
+		let  postcontext = get_funcexp_postcontext cfunc in	
+		let retargslist = postcontext in
+		let retstname = next_fvar false in
+		let cstruct = CStruct (retstname,retargslist) in	
+		let ccall = (CCall (fname,cstruct)) in
+		(* FIXME: What about copying return type? *)
+		(gammaenc', ccall)
   |ESet l  -> 
 		(gammaenc, CUpdate (CDeref (CLoc ("l"^(string_of_int l))), (CConst 1)))
   |EEnclave (i,s) -> 
-		let (gammaenc', precontext, postcontext) = prepare_pre_post_context s gammaenc VarLocMap.empty VarLocMap.empty in
+		let (gammaenc', precontext, postcontext) = prepare_pre_post_enclave_context s gammaenc VarLocMap.empty VarLocMap.empty in
 		let (gammaenc'', ecstmt) = translatetoCstmt s  gammaenc in
-		let fname = next_fvar () in
-		(* FIXME: What about return type? *)
-		let cfunc = CLambda ((Enclave i), fname, (translatetoCargs precontext), ecstmt) in
-		let ecall = CCall fname in
+		let fname = next_fvar true  in
+		let cfunc = CLambda ((Enclave i), fname, (translatetoCargs precontext), (translatetoCargs postcontext), ecstmt) in
+		(* Prepare for return values *)
+		(* FIXME: What if func is a variable *)
+		let  postcontext = get_funcexp_postcontext cfunc in	
+		let retargslist = postcontext in
+		let retstname = next_fvar false in
+		let cstruct = CStruct (retstname,retargslist) in	
+		let ecall = CCall (fname, cstruct) in 
+		(* FIXME: What about copying return type? *)
 		(gammaenc'', ecall) 
