@@ -11,6 +11,7 @@ type ctype =
 
 and  ccontext = ctype VarLocMap.t
 
+
 type cexp = 
  |CConst of int
  |CVar of var
@@ -31,7 +32,7 @@ and cstmt =
  |CIf of cexp * cstmt * cstmt
  |CSkip
  |CRet of cexp				(* Return statement *)
- |CCall of var *  cexp  		(* Function name and return name *) 
+ |CCall of var * (varloc*ctype) list *  cexp  		(* Function name, args list and return name *) 
 
 
 type cprogram = ccontext * cstmt

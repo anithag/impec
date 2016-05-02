@@ -1,4 +1,9 @@
-l10:int_low^n ref^mut_low 
+l10:int_low^n ref^mut_low;
+x: int_low
 
-enclave(1, l10<-10)
+x:=12;
+enclave(1, 
+	l10<-10;
+	x:= x + 12
+)
 

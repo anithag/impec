@@ -23,6 +23,10 @@ and flattenexp eexp = match eexp with
   | ELam(mu, pre, kpre, p, u, post, kpost, q, s) -> ELam(mu, pre, kpre, p, u, post, kpost, q, EESeq (flattenseq s))
   | _ -> eexp
 
+let extend_c_sequence cseq cs = match cseq with
+ | CSeq cslist -> CSeq (cslist@[cs])
+ | cs'		->CSeq ([cs']@ [cs])
+   	
 let get_return_struct_name = function
   | CStruct (stname, memlist) -> stname
   | _ -> raise (HelperError "Expected structure")
@@ -43,6 +47,10 @@ let get_enc_postcontext (t:enclabeltype) =
 
 let get_funcexp_postcontext = function
  |CLambda (mu, f, pre , post,_) -> post
+ | _ -> raise (HelperError "Function Expression expected") 
+
+let get_funcexp_precontext = function
+ |CLambda (mu, f, pre , post,_) -> pre
  | _ -> raise (HelperError "Function Expression expected") 
 
 let rec get_enc_exp_type (genc:enccontext) (e:encexp) : enclabeltype =
@@ -153,10 +161,9 @@ let rec prepare_pre_post_enclave_context_exp e encgamma pre post isdef =
 		if (is_mode_enc mu) then
 			(* enclave locations do not flow outside *)
 			(pre, post)	
-		else if isdef then
-			(pre, VarLocMap.add (Mem l) loctype post)
 		else
-			(VarLocMap.add (Mem l) loctype pre, post)
+			(*FIXME: Quick hack. Being conservative. Optimize later *)
+			(VarLocMap.add (Mem l) loctype pre, VarLocMap.add (Mem l) loctype post)
   | EConstant n -> (pre, post)
   | ELam(mu, fpre, kpre, p, u, fpost, kpost, q, s) -> (pre, post)
   | EPlus (l,r) 
@@ -181,7 +188,7 @@ let rec prepare_pre_post_enclave_context s encgamma pre post =
 		let xtype = VarLocMap.find (Reg x) encgamma' in
 		(encgamma', pre', VarLocMap.add (Reg x) xtype post')
   |EUpdate (e1, e2) ->
-		let (pre1, post1) =  prepare_pre_post_enclave_context_exp e1 encgamma pre post true in
+		let (pre1, post1) =  prepare_pre_post_enclave_context_exp e1 encgamma pre post false in
 		let (pre2, post2) =  prepare_pre_post_enclave_context_exp e2 encgamma pre1 post1 false in
 		(encgamma, pre2, post2)
   |EESeq eli  -> let rec loop eli encgamma pre post = begin match eli with
@@ -220,3 +227,11 @@ let next_fvar isfunc : var =
   let s = funcvar ^ string_of_int x in
   incr fvar_cell;  s
 
+let stvar_cell = ref 1 
+
+let next_struct_name () =
+  let x = !stvar_cell in
+  let stvar = "struct_" in
+  let s = stvar^ string_of_int x in
+   incr stvar_cell; s
+  
