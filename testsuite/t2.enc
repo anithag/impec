@@ -1,3 +1,9 @@
-x:int_low
+l10:int_low^enc_1 ref^mut_low;
+x: int_low
 
-x:=10
+x:=12;
+enclave(1, 
+	l10<-10;
+	x:= x + 12
+)
+

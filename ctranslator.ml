@@ -25,10 +25,11 @@ let rec translatetoCexp eexp gammaenc cfunclist = match eexp with
 						    let argslist  = (translatetoCargs pre) in
 						    let retargslist = (translatetoCargs post) in
 						    let retstname = next_fvar false in
-						    let cstruct = CStruct (retstname,retargslist) in	
+	        				    let retsttypename    = next_struct_name () in
+						    let cstruct = CStruct (retsttypename, retstname,retargslist) in	
 						    let cret 	= CRet cstruct in
 						    let cs'	= extend_c_sequence cs cret in
-						    let cfunc = CLambda (mu, next_fvar true, argslist, retargslist, cs') in
+						    let cfunc = CLambda (mu, next_fvar true, argslist, cstruct, cs') in
 						(gammaenc', cfunc, (cfunclist'@[cfunc]))
   | EPlus (l,r) -> let (gammaencl, cl, cfunclistl) =  (translatetoCexp l gammaenc cfunclist) in
 		   let (gammaencr, cr, cfunclistr) =  (translatetoCexp r gammaencl cfunclistl) in
@@ -76,16 +77,18 @@ and translatetoCstmt estmt gammaenc cfunclist = match estmt with
   |ECall f -> let (gammaenc', cfunc, cfunclist') = (translatetoCexp f gammaenc cfunclist) in
 	      (* get function name *)
 	      let fname = get_fname cfunc in
+	      let mu =   get_mode cfunc in
 		(* Prepare for return values *)
 		(* FIXME: What if cfunc is a variable *)
 		let  postcontext = get_funcexp_postcontext cfunc in	
 		let retargslist = postcontext in
 		let retstname = next_fvar false in
-		let cstruct = CStruct (retstname,retargslist) in	
+	        let retsttypename    = next_struct_name () in
+		let cstruct = CStruct (retsttypename, retstname,retargslist) in	
 		let precontext = get_funcexp_precontext cfunc in
 		let argslist  = precontext in
-		let ccall = (CCall (fname,argslist, cstruct)) in
-		(* FIXME: What about copying return type? *)
+		let ccall = (CCall (mu, fname,argslist, cstruct)) in
+		(* FIXME: What about copying return type? Handle while printing *)
 		(gammaenc', ccall, cfunclist')
   |ESet l  -> 
 		(gammaenc, CUpdate (CDeref (CLoc ("l"^(string_of_int l))), (CConst 1)), cfunclist)
@@ -95,15 +98,19 @@ and translatetoCstmt estmt gammaenc cfunclist = match estmt with
 		let fname = next_fvar true  in
 		let cprecontext = (translatetoCargs precontext) in
 		let cpostcontext = (translatetoCargs postcontext) in
+	        let mu = (Enclave i) in  
 		(* Prepare for return values *)
 		(* FIXME: What if func is a variable *)
 		let retargslist = cpostcontext in
 		let retstname = next_fvar false in
-		let cstruct = CStruct (retstname,retargslist) in	
+	        let retsttypename    = next_struct_name () in
+		let cstruct = CStruct (retsttypename, retstname,retargslist) in	
 	        let cret  = CRet cstruct in
 	        let ecs	  = extend_c_sequence ecstmt cret in
-		let cfunc = CLambda ((Enclave i), fname, cprecontext, cpostcontext, ecs) in
+		let cfunc = CLambda ((Enclave i), fname, cprecontext, cstruct, ecs) in
 		let argslist  = cprecontext in
-		let ecall = CCall (fname, argslist, cstruct) in 
-		(* FIXME: What about copying return type? *)
+		let ecall = CCall (mu, fname, argslist, cstruct) in 
+		(* FIXME: What about copying return type? Handle while printing *)
 		(gammaenc'', ecall, (cfunclist'@[cfunc])) 
+
+

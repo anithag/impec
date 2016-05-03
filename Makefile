@@ -1,4 +1,5 @@
 MAIN=impec
+OUTPUTDIR=encproject
 
 OBJS = ast.cmo lexer.cmo parser.cmo cast.cmo helper.cmo ctranslator.cmo cappfuncprinter.cmo cprinter.cmo main.cmo
 
@@ -25,4 +26,4 @@ parser.mli : parser.mly
 	ocamlyacc -q $<
 
 clean:
-	rm -f *.cmo *.cmi lexer.ml parser.ml parser.mli $(MAIN) app.c Enclave.c
+	rm -f *.cmo *.cmi lexer.ml parser.ml parser.mli $(MAIN) $(OUTPUTDIR)/app.c $(OUTPUTDIR)/Enclave.c $(OUTPUTDIR)/Enclave.edl $(OUTPUTDIR)/Enclave.h $(OUTPUTDIR)/app.h

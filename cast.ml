@@ -21,8 +21,9 @@ type cexp =
  |CEq of cexp * cexp
  |CNeq of cexp * cexp
  |CDeref of cexp
- |CLambda of mode * var* (varloc* ctype) list * (varloc * ctype) list * cstmt
- |CStruct of var * (varloc * ctype)  	list		(* C structure *)
+ |CLambda of mode * var* (varloc* ctype) list * cexp * cstmt  (* mu, cstruct funcname (argslist) { cstmt} *)
+ |CStruct of var * var * (varloc * ctype) list		(* C structure: sttype stvarname *)
+ |CMalloc of mode * int					(* l^mu = malloc(size) *)
  
 and cstmt = 
    CAssign of var * cexp
@@ -32,7 +33,7 @@ and cstmt =
  |CIf of cexp * cstmt * cstmt
  |CSkip
  |CRet of cexp				(* Return statement *)
- |CCall of var * (varloc*ctype) list *  cexp  		(* Function name, args list and return name *) 
+ |CCall of mode * var * (varloc*ctype) list *  cexp  		(* Function name, args list and return name *) 
 
 
 type cprogram = ccontext * cstmt

@@ -28,11 +28,19 @@ let extend_c_sequence cseq cs = match cseq with
  | cs'		->CSeq ([cs']@ [cs])
    	
 let get_return_struct_name = function
-  | CStruct (stname, memlist) -> stname
+  | CStruct (sttypename, stname, memlist) -> stname
+  | _ -> raise (HelperError "Expected structure")
+
+let get_return_struct_type = function
+  | CStruct (sttypename, stname, memlist) -> sttypename
   | _ -> raise (HelperError "Expected structure")
 
 let get_fname = function
  |CLambda (mu, f, _ ,_,_) -> f
+ | _  -> raise (HelperError "Lambda expression expected")
+
+let get_mode = function
+ |CLambda (mu, f, _ ,_,_) -> mu
  | _  -> raise (HelperError "Lambda expression expected")
 
 let get_enc_precontext (t:enclabeltype) =
@@ -46,7 +54,10 @@ let get_enc_postcontext (t:enclabeltype) =
    |_ -> raise (HelperError "")
 
 let get_funcexp_postcontext = function
- |CLambda (mu, f, pre , post,_) -> post
+ |CLambda (mu, f, pre , post,_) -> begin match post with
+				  |CStruct (sttype, stname, memlist) -> memlist
+				  |_ -> raise (HelperError "Structure expression expected")
+				  end
  | _ -> raise (HelperError "Function Expression expected") 
 
 let get_funcexp_precontext = function
