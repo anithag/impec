@@ -22,12 +22,7 @@ let printvar oc (variable, isrec, isdecl) =
 	()
 
 let rec printSingleCtype oc (variable, ctyp, isrec, isdecl, iscall, isedl) = match ctyp with
-  | CBool -> if (not iscall) && ((not isedl) || (isedl && (not isrec)))  then 
-		Printf.fprintf oc " bool %a" printvar (variable, isrec, isdecl) 
-	     else if (not iscall) && isedl && (isrec)  then
-		Printf.fprintf oc " [user_check] bool %a" printvar (variable, isrec, isdecl) 
-	     else
-		printvar oc (variable, isrec, isdecl) 
+  | CBool 
   | CInt  -> if (not iscall) && ((not isedl) || (isedl && (not isrec)))  then 
 		Printf.fprintf oc " int %a" printvar  (variable, isrec, isdecl)
 	     else if (not iscall) && isedl && isrec then
@@ -56,6 +51,24 @@ let rec printSingleCtype oc (variable, ctyp, isrec, isdecl, iscall, isedl) = mat
 	     		else
 				printvar oc (variable, isrec, isdecl) 
 
+let rec printSingleCarraytype oc (variable, ctyp, isrec, printbasetype) = match ctyp with
+  | CBool 
+  | CInt -> if (printbasetype) then
+		Printf.fprintf oc " int "
+	    else
+			()
+  | CRef (mu, rt, ct) -> if (not isrec) && (not printbasetype)  then 
+			     Printf.fprintf oc " %a %a %a[]" printSingleCarraytype (variable,ct, true, true)  printvar (variable, false, false) printSingleCarraytype (variable, ct, true, false) 
+  			 else if isrec && (not printbasetype) then
+				(* prints only [] *)
+			     Printf.fprintf oc " %a[]" printSingleCarraytype (variable, ct, false, false) 
+			 else if isrec && printbasetype then
+				printSingleCarraytype oc (variable, ct, true, true)
+			 else
+				(* should not reach here *)
+				()
+			
+  | CcondRef mu -> Printf.fprintf oc "int %a[]" printvar (variable, true,false)
 
 (* Given a structure, print its members *)
 let printCstructmemdecl ec = function
@@ -124,11 +137,11 @@ let printAppmemory oc cntxt =
 (* FIXME: malloc size *)
 let printEnclavealloc oc (variable,ctyp) = match ctyp with
   | CcondRef mu -> if (is_mode_enc mu) then
-			Printf.fprintf oc "%a = (short *) malloc(2); " printvar (variable, false, false)
+			Printf.fprintf oc "%a={0}  ; " printSingleCarraytype (variable, ctyp, false, false)
 		   else
 			()
   | CRef (mu, rt, ct) -> if (is_mode_enc mu) then
-				Printf.fprintf oc " %a = (int *) malloc(4);" printvar (variable, false, false) 
+				Printf.fprintf oc " %a ={0} ;" printSingleCarraytype (variable, ctyp, false, false)
 		        else
 				()
   | _ -> ()
@@ -214,7 +227,7 @@ let rec printEnclave ec (cntxt, cfunclist) =
  let _ = Printf.fprintf ec "#include \"Enclave.h\"\n" in 
  let _ = Printf.fprintf ec "#include \"Enclave_t.h\"\n\n" in 
  let _  = printEnclavememory ec cntxt in
- let _ = Printf.fprintf ec "\n/* End of allocation */ \n" in 
+ let _ = Printf.fprintf ec "\n/* malloc gives non-constant initialization error. \n End of allocation */ \n" in 
  let rec loop cfunclist = match cfunclist with
   | [] -> ()
   | xs::tail -> let _ = begin match xs with
