@@ -1,0 +1,13 @@
+l10:int_low^enc_1 ref^mut_low;
+l11:int_low^enc_1 ref^mut_low;
+l12:int_low^n ref^mut_low;
+x: int_low
+
+x:=12;
+l12<- 24;
+enclave(1, 
+	l10<-10;
+	x:= x + 12;
+	l11<-(*l12) + 11
+)
+

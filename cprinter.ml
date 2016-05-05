@@ -47,6 +47,7 @@ let rec printSingleCtype oc (variable, ctyp, isrec, isdecl, iscall, isedl) = mat
   | CFunc (pre, post) ->if (not iscall) && ((not isedl) || (isedl && (not isrec)))  then 
 				Printf.fprintf oc "void (* %a )() " printvar (variable, isrec, isdecl)
 	     	        else if (not iscall) && isedl && isrec then
+				(*FIXME: [in] is probably efficient *)
 				Printf.fprintf oc "[user_check] void (* %a )() " printvar (variable, isrec, isdecl)
 	     		else
 				printvar oc (variable, isrec, isdecl) 
@@ -137,11 +138,11 @@ let printAppmemory oc cntxt =
 (* FIXME: malloc size *)
 let printEnclavealloc oc (variable,ctyp) = match ctyp with
   | CcondRef mu -> if (is_mode_enc mu) then
-			Printf.fprintf oc "%a={0}  ; " printSingleCarraytype (variable, ctyp, false, false)
+			Printf.fprintf oc " %a={0};\n " printSingleCarraytype (variable, ctyp, false, false)
 		   else
 			()
   | CRef (mu, rt, ct) -> if (is_mode_enc mu) then
-				Printf.fprintf oc " %a ={0} ;" printSingleCarraytype (variable, ctyp, false, false)
+				Printf.fprintf oc " %a ={0};\n" printSingleCarraytype (variable, ctyp, false, false)
 		        else
 				()
   | _ -> ()
@@ -175,7 +176,14 @@ let rec printCbody oc cprog = match cprog with
 				    let _	  = Printf.fprintf oc " /* Declare return type */\n" in
 				    let _	  = Printf.fprintf oc " %s %s;\n" sttypename stvarname in
 				    let _ 	  = if (is_mode_enc mu) then
-				    			Printf.fprintf oc " ret = %s(eid, &%s, %a);\n " fname stvarname printCargs (argslist, true, false) 
+				    			(* Printf.fprintf oc " ret = %s(eid, &%s, %a );\n " fname stvarname printCargs (argslist, true, false) *)
+				    			let _ = Printf.fprintf oc " ret = %s(eid, &%s" fname stvarname in
+				    			let _ = if not ((List.length argslist) = 0) then
+							 	       Printf.fprintf oc " ,%a);\n " printCargs (argslist, true, false) 
+								else
+									Printf.fprintf oc ");\n" 
+							in ()
+							
 						    else
 				    			Printf.fprintf oc " %s = %s( %a );\n " stvarname fname printCargs (argslist, true, false) 
 						    in
@@ -226,8 +234,9 @@ let rec printAppHeaders eh cfunclist =
 let rec printEnclave ec (cntxt, cfunclist) = 
  let _ = Printf.fprintf ec "#include \"Enclave.h\"\n" in 
  let _ = Printf.fprintf ec "#include \"Enclave_t.h\"\n\n" in 
+ let _ = Printf.fprintf ec "\n/* Use arrays since malloc outside functions gives non-constant initialization error */ \n" in 
  let _  = printEnclavememory ec cntxt in
- let _ = Printf.fprintf ec "\n/* malloc gives non-constant initialization error. \n End of allocation */ \n" in 
+ let _ = Printf.fprintf ec "\n/* End of allocation */ \n\n" in 
  let rec loop cfunclist = match cfunclist with
   | [] -> ()
   | xs::tail -> let _ = begin match xs with
