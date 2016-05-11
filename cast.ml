@@ -33,7 +33,7 @@ and cstmt =
  |CIf of cexp * cstmt * cstmt
  |CSkip
  |CRet of cexp				(* Return statement *)
- |CCall of mode * var * (varloc*ctype) list *  cexp  		(* Function name, args list and return name *) 
+ |CCall of mode * var * (varloc*ctype) list *  cexp  		(* Function name, args list and return structure*) 
 
 
 type cprogram = ccontext * cstmt

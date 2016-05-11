@@ -23,16 +23,24 @@ and flattenexp eexp = match eexp with
   | ELam(mu, pre, kpre, p, u, post, kpost, q, s) -> ELam(mu, pre, kpre, p, u, post, kpost, q, EESeq (flattenseq s))
   | _ -> eexp
 
+let prepend_c_sequence cseq cs = match cseq with
+ | CSeq cslist -> CSeq ([cs]@cslist)
+ | cs'		->CSeq ([cs]@[cs'])
+   	
 let extend_c_sequence cseq cs = match cseq with
  | CSeq cslist -> CSeq (cslist@[cs])
  | cs'		->CSeq ([cs']@ [cs])
-   	
+
 let get_return_struct_name = function
   | CStruct (sttypename, stname, memlist) -> stname
   | _ -> raise (HelperError "Expected structure")
 
 let get_return_struct_type = function
   | CStruct (sttypename, stname, memlist) -> sttypename
+  | _ -> raise (HelperError "Expected structure")
+
+let isstructempty  = function
+  | CStruct (sttypename, stname, memlist) -> if (List.length memlist) = 0 then true else false
   | _ -> raise (HelperError "Expected structure")
 
 let get_fname = function
@@ -159,6 +167,30 @@ let is_mode_enc = function
  | Enclave _ -> true
  | _ -> false
 
+let get_enc_id = function
+ | Enclave eid -> eid
+ | _ -> raise (HelperError "Expected enclave mode")
+
+let shadowlocations loclist = 
+  let rec loop loclist sdwlist = begin match loclist with
+    | [] -> sdwlist
+    | (l,ctyp)::tail -> let locstr = begin match l with 
+			|Mem loc -> "_l"^(string_of_int loc)  
+			| _ -> raise (HelperError "Location Expected")
+		     end in
+		     loop tail (sdwlist@[(Reg locstr, ctyp)])
+
+ end  in 
+  loop loclist [] 
+
+let rec getusedEnclaves usedeidlist= function
+ |[] -> usedeidlist
+ |xs::tail -> begin match xs with
+  		| CLambda(mu, fname, argslist, cretstruct, s) -> let usedeidlist' = if (is_mode_enc mu) then usedeidlist@[(get_enc_id mu)] else usedeidlist in
+								 getusedEnclaves usedeidlist' tail
+		| _ -> raise (HelperError "CLambda expected")
+	      end 
+		
 let rec prepare_pre_post_enclave_context_exp e encgamma pre post isdef = 
  match e with
   | EVar v -> if isdef then
@@ -167,6 +199,7 @@ let rec prepare_pre_post_enclave_context_exp e encgamma pre post isdef =
 		(VarLocMap.add (Reg v) (VarLocMap.find (Reg v) encgamma) pre, post)
   | EIsunset l 
   | ELoc l -> (* Optimization: Add only if it is non-enclave location *)
+		(* DISABLE: Making locations global don't require them passing around
 		let  loctype = VarLocMap.find (Mem l) encgamma in
 		let mu = get_mode_ref loctype in
 		if (is_mode_enc mu) then
@@ -175,6 +208,8 @@ let rec prepare_pre_post_enclave_context_exp e encgamma pre post isdef =
 		else
 			(*FIXME: Quick hack. Being conservative. Optimize later *)
 			(VarLocMap.add (Mem l) loctype pre, VarLocMap.add (Mem l) loctype post)
+		*)
+		(pre, post)
   | EConstant n -> (pre, post)
   | ELam(mu, fpre, kpre, p, u, fpost, kpost, q, s) -> (pre, post)
   | EPlus (l,r) 

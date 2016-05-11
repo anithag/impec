@@ -1,0 +1,7 @@
+l10:int_low^n ref^mut_low^n ref^mut_low;
+l11:int_low^n ref^mut_low;
+x:int_low^n ref^mut_low
+
+x:= l11;
+l10 <- x;
+enclave(1, (*l10) <- 4 + (*(*l10)))

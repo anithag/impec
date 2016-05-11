@@ -2,6 +2,8 @@ open Ast
 open Cast
 open Helper
 
+exception PrintError of string
+
 (* Convert an IMPe type C Type. Ignore policies *)
 let rec translatetoCtype enclt = 
 	match enclt with
@@ -103,10 +105,10 @@ and translatetoCstmt estmt gammaenc cfunclist = match estmt with
 		(* FIXME: What if func is a variable *)
 		let retargslist = cpostcontext in
 		let retstname = next_fvar false in
-	        let retsttypename    = next_struct_name () in
+		let retsttypename    = next_struct_name () in
 		let cstruct = CStruct (retsttypename, retstname,retargslist) in	
-	        let cret  = CRet cstruct in
-	        let ecs	  = extend_c_sequence ecstmt cret in
+		let cret  = CRet cstruct in
+		let ecs	  = extend_c_sequence ecstmt cret in
 		let cfunc = CLambda ((Enclave i), fname, cprecontext, cstruct, ecs) in
 		let argslist  = cprecontext in
 		let ecall = CCall (mu, fname, argslist, cstruct) in 

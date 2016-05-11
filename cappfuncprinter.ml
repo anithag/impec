@@ -1,4 +1,4 @@
-
+open Format
 
 let enclave_status_var_str = 
 	" sgx_enclave_id_t   eid;
@@ -6,19 +6,12 @@ let enclave_status_var_str =
  sgx_launch_token_t token = {0};
  int updated = 0;
 	"
-let load_enclave_str = 
-" // Create the Enclave with above launch token
- ret = sgx_create_enclave(ENCLAVE_FILE, SGX_DEBUG_FLAG, &token, &updated, &eid, NULL);
- if (ret != SGX_SUCCESS) {
-	printf(\"App: error %#x, failed to create enclave.\\n\", ret);
-	return -1;
- }"
+let load_enclave_str oc eid = 
+let _ = Printf.fprintf oc " // Create the Enclave with above launch token\n" in
+let _ = Printf.fprintf oc " ret = sgx_create_enclave(ENCLAVE%s_FILE, SGX_DEBUG_FLAG, &token, &updated, &eid, NULL);\n" (string_of_int eid) in
+Printf.fprintf oc "if (ret != SGX_SUCCESS) { \n printf(\"App: error %#x, failed to create enclave.\\n\", ret);\n return -1;\n }\n"
 
-let destroy_enclave_str = 
- "
- // Destroy the enclave when all Enclave calls finished.
- if(SGX_SUCCESS != sgx_destroy_enclave(eid))
-  	return -1;
+let destroy_enclave_str oc  eid = 
+	let _ = Printf.fprintf oc " // Destroy the enclave when all Enclave calls finished.\n" in
+		Printf.fprintf oc " if(SGX_SUCCESS != sgx_destroy_enclave(eid)) \n return -1; \nreturn 0;\n"
 
-return 0; 
-"
