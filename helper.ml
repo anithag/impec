@@ -158,10 +158,13 @@ let rec enc_flow_sensitive_type_infer (pc:policy) (genc:enccontext) = function
     |EOutput(x, e) -> genc
     |EEnclave(i, s) -> enc_flow_sensitive_type_infer pc genc s   
 
-
 let get_mode_ref = function
  | EBtRef (mu,_,_), _ -> mu
  | _,_ -> raise (HelperError "Expected Ref")
+
+let get_mode_cref = function
+ | CRef (mu,_,_) -> mu
+ | _ -> raise (HelperError "Expected CRef")
 
 let is_mode_enc = function
  | Enclave _ -> true
@@ -229,10 +232,15 @@ let rec prepare_pre_post_enclave_context s encgamma pre post =
   |ESkip  	-> (encgamma, pre, post)
   |EDeclassify (x, e)  
   |EAssign (x,e) -> 
+		(* FIXME: Ideally if the variable is being defined, it need not be passed
+		   but for the sake of declaration, add it to precontext 
+		   An alternate way is to remove it from arguments and handle 
+		   declaring it locally in the callee
+		 *)
 		let (pre', post') =  prepare_pre_post_enclave_context_exp e encgamma pre post false in
 		let encgamma' = enc_flow_sensitive_type_infer  Low  encgamma s in
 		let xtype = VarLocMap.find (Reg x) encgamma' in
-		(encgamma', pre', VarLocMap.add (Reg x) xtype post')
+		(encgamma', VarLocMap.add (Reg x) xtype pre', VarLocMap.add (Reg x) xtype post')
   |EUpdate (e1, e2) ->
 		let (pre1, post1) =  prepare_pre_post_enclave_context_exp e1 encgamma pre post false in
 		let (pre2, post2) =  prepare_pre_post_enclave_context_exp e2 encgamma pre1 post1 false in
@@ -260,6 +268,7 @@ let rec prepare_pre_post_enclave_context s encgamma pre post =
 		let (pre1, post1) =  prepare_pre_post_enclave_context_exp (ELoc l) encgamma pre post true in
 		(encgamma, pre1, post1)
   |EEnclave (i,s) -> raise (HelperError "Nested Enclaves found")
+
 
 (* ------ Function Names ---------- *)
 let fvar_cell = ref 1

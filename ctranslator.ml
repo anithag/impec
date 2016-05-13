@@ -110,8 +110,7 @@ and translatetoCstmt estmt gammaenc cfunclist = match estmt with
 		let cret  = CRet cstruct in
 		let ecs	  = extend_c_sequence ecstmt cret in
 		let cfunc = CLambda ((Enclave i), fname, cprecontext, cstruct, ecs) in
-		let argslist  = cprecontext in
-		let ecall = CCall (mu, fname, argslist, cstruct) in 
+		let ecall = CCall (mu, fname, cprecontext, cstruct) in 
 		(* FIXME: What about copying return type? Handle while printing *)
 		(gammaenc'', ecall, (cfunclist'@[cfunc])) 
 

@@ -269,13 +269,15 @@ let initNormalLocations eid cntxt fname =
 					   let est = CAssign (lval, CVar rval) in
 					   loop (es@[est]) tail
 		in
- 	       let loccntxt = VarLocMap.filter (fun key value -> match key with
+ 	       let nloccntxt = VarLocMap.filter (fun key value -> match key with
 				 | Reg _ -> false 
-				 | Mem _ -> true 
+				 | Mem _ -> let isnormalloc = if (is_mode_enc (get_mode_cref value)) then false 
+					    			else  true (* Only non-enclave locations *)
+					    in isnormalloc
 				 ) cntxt in
-		let eslist  = loop [] (VarLocMap.bindings loccntxt) in
-		let cfunc = CLambda ((Enclave eid), fname, (shadowlocations (VarLocMap.bindings loccntxt)), cstruct, CSeq eslist) in
-		let ecall = CCall ((Enclave eid), fname, (VarLocMap.bindings loccntxt), cstruct) in 
+		let eslist  = loop [] (VarLocMap.bindings nloccntxt) in
+		let cfunc = CLambda ((Enclave eid), fname, (shadowlocations (VarLocMap.bindings nloccntxt)), cstruct, CSeq eslist) in
+		let ecall = CCall ((Enclave eid), fname, (VarLocMap.bindings nloccntxt), cstruct) in 
 		(ecall, cfunc)
 	
 	 
