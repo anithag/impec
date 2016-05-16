@@ -82,11 +82,7 @@ and translatetoCstmt estmt gammaenc cfunclist = match estmt with
 	      let mu =   get_mode cfunc in
 		(* Prepare for return values *)
 		(* FIXME: What if cfunc is a variable *)
-		let  postcontext = get_funcexp_postcontext cfunc in	
-		let retargslist = postcontext in
-		let retstname = next_fvar false in
-	        let retsttypename    = next_struct_name () in
-		let cstruct = CStruct (retsttypename, retstname,retargslist) in	
+		let cstruct = get_retcstruct cfunc in
 		let precontext = get_funcexp_precontext cfunc in
 		let argslist  = precontext in
 		let ccall = (CCall (mu, fname,argslist, cstruct)) in

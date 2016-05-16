@@ -172,10 +172,9 @@ let rec printCbody oc cprog = match cprog with
  |CRet cexpr ->	let emptyst = isstructempty cexpr in
 		let stvarname = (get_return_struct_name cexpr) in
 		if not emptyst then 
-			let _	  = Printf.fprintf oc " \n /* Declare return type */ \n" in
+			let _	  = Printf.fprintf oc " \n /* Declare and prepare return type */ \n" in
 			let sttypename    = (get_return_struct_type cexpr) in
 			let _	  = Printf.fprintf oc " %s %s;\n" sttypename stvarname in
-			let _	  = Printf.fprintf oc " \n /* Prepare return type */\n" in
 			let _     = Printf.fprintf oc " %a " printCstructinit cexpr in
 			Printf.fprintf oc " return %s;\n" (get_return_struct_name cexpr) 			
 		else
@@ -184,10 +183,11 @@ let rec printCbody oc cprog = match cprog with
 				        let stvarname = (get_return_struct_name cexpr) in
 					let _	    = if not emptyst then 
 							    let sttypename    = (get_return_struct_type cexpr) in
-							    let _ 	  = Printf.fprintf oc "\n  struct %s{ \n" sttypename in 
+							    (* let _ 	  = Printf.fprintf oc "\n  struct %s{ \n" sttypename in 
 							    let _  	  = Printf.fprintf oc "  %a " printCstructmemdecl cexpr in
 							    let _	  = Printf.fprintf oc "  };\n\n" in
-							    let _	  = Printf.fprintf oc " /* Declare return type */\n" in
+							    *)
+							    let _	  = Printf.fprintf oc "\n /* Declare return type */\n" in
 							    Printf.fprintf oc " %s %s;\n" sttypename stvarname 
 						     else
 						    	    Printf.fprintf oc " \n"
@@ -224,6 +224,28 @@ and printCexp oc cexpr = match cexpr with
  |CLambda(mu, fname, argslist, cretstruct, s) -> Printf.fprintf oc " %s %s( %a ) { \n %a \n }" (get_return_struct_type cretstruct) fname printCargs (argslist, false, false) printCbody s
  |CStruct (sttypename, structname,  memlist) -> ()
  
+let rec printAppfunctions oc (cntxt, cfunclist) = 
+ let rec loop cfunclist = match cfunclist with
+  | [] -> ()
+  | xs::tail -> let _ = begin match xs with
+  		| CLambda(mu, fname, argslist, cretstruct, s) -> 
+								 if not (is_mode_enc mu) then
+								  let stvarname = (get_return_struct_name cretstruct) in
+								  (* Structure declaration not required. Edger8r generates signature from  EDL files *)
+								  let _	  = Printf.fprintf oc " \n /* Declare return structure type */" in
+								  let sttypename    = (get_return_struct_type cretstruct) in
+								  let _ 	  = Printf.fprintf oc "\n  typedef struct %s { \n" sttypename in 
+								  let _ 	  = Printf.fprintf oc "  %a " printCstructmemdecl cretstruct in
+								  let _	  = Printf.fprintf oc  "  }%s;\n\n" sttypename in
+								  (* Declare function only if it is not in enclave mode. For enclave mode declarations EDL files generate stubs *)
+								  Printf.fprintf oc "  %s %s( %a ) {\n %a } \n\n " (get_return_struct_type cretstruct) fname printCargs (argslist, false, false) printCbody s
+								 else
+								 	()
+		| _ -> raise (PrintError "Function Expected")  
+		end in
+		loop tail
+ in 
+ loop cfunclist
 
 let rec printAppHeaders eh (cfunclist, eidlist) = 
  let _ = Printf.fprintf eh "#ifndef _APP_H_\n#define _APP_H_\n" in
@@ -292,10 +314,10 @@ let rec printEnclave ec (cntxt, cfunclist, eid) =
   | [] -> ()
   | xs::tail -> let _ = begin match xs with
   		| CLambda(mu, fname, argslist, cretstruct, s) -> let emptyst = isstructempty cretstruct in
-								 if emptyst then
-									Printf.fprintf ec " void %s( %a ) { \n %a \n }\n" fname printCargs (argslist, false, false) printCbody s
-								 else
-									Printf.fprintf ec " %s %s( %a ) { \n %a \n }\n" (get_return_struct_type cretstruct) fname printCargs (argslist, false, false) printCbody s
+								 	if emptyst then
+										Printf.fprintf ec " void %s( %a ) { \n %a \n }\n" fname printCargs (argslist, false, false) printCbody s
+								 	else
+										Printf.fprintf ec " %s %s( %a ) { \n %a \n }\n" (get_return_struct_type cretstruct) fname printCargs (argslist, false, false) printCbody s
 		| _ -> raise (PrintError "Function Expected")  
 		end in
 		loop tail
@@ -332,27 +354,27 @@ let rec printEDL  edl cfunclist =
  let rec loop cfunclist = match cfunclist with
   | [] -> ()
   | xs::tail -> let _ = begin match xs with
-  		| CLambda(mu, fname, argslist, cretstruct, s) -> let emptyst = isstructempty cretstruct in
-								 let stvarname = (get_return_struct_name cretstruct) in 
-								 let _  = if not emptyst then
-										 let _	  = Printf.fprintf edl " \n /* Declare return structure type */" in
-										 let sttypename    = (get_return_struct_type cretstruct) in
-										 let _ 	  = Printf.fprintf edl "\n  struct %s { \n" sttypename in 
-										 let _  	  = Printf.fprintf edl "  %a " printCstructmemdecl cretstruct in
-										 Printf.fprintf edl  "  };\n\n" 
-									   else
-										 ()
+  		| CLambda(mu, fname, argslist, cretstruct, s) -> if (is_mode_enc mu) then
+									 let emptyst = isstructempty cretstruct in
+									 let stvarname = (get_return_struct_name cretstruct) in 
+									 let _  = if not emptyst then
+											 let _	  = Printf.fprintf edl " \n /* Declare return structure type */" in
+											 let sttypename    = (get_return_struct_type cretstruct) in
+											 let _ 	  = Printf.fprintf edl "\n  struct %s { \n" sttypename in 
+											 let _  	  = Printf.fprintf edl "  %a " printCstructmemdecl cretstruct in
+											 Printf.fprintf edl  "  };\n\n" 
+										   else
+											 ()
 									   in
-								 	   if (is_mode_enc mu) then
-										let _ = Printf.fprintf edl " trusted { \n " in
-										let _ = if emptyst then
-												Printf.fprintf edl " public void %s( %a ); \n\n " fname printCargs (argslist, false, true) 
-											 else
-												Printf.fprintf edl " public %s %s( %a ); \n\n " (get_return_struct_type cretstruct) fname printCargs (argslist, false, true) 
-											 in
-										Printf.fprintf edl " }; \n \n " 
-									     else
-										()
+									 let _ = Printf.fprintf edl " trusted { \n " in
+									 let _ = if emptyst then
+											Printf.fprintf edl " public void %s( %a ); \n\n " fname printCargs (argslist, false, true) 
+										 else
+											Printf.fprintf edl " public %s %s( %a ); \n\n " (get_return_struct_type cretstruct) fname printCargs (argslist, false, true) 
+										 in
+									  Printf.fprintf edl " }; \n \n " 
+							        else
+									()
 		| _ -> raise (PrintError "Function Expected")  
 		end in
 		loop tail
@@ -369,6 +391,16 @@ let rec printAppUheaders oc eidlist = match eidlist with
 let printCprog (cntxt, cprog, cfunclist) =
   (* let oc = open_out_gen [Open_creat; Open_text; Open_append] 0o640 "app.c" in *)
   let eidlist = getusedEnclaves [] cfunclist  in
+  let rec loop2 cprog cfunclist eidlist = match eidlist with
+	| [] -> (cprog, cfunclist)
+   	| eid::tail -> 
+		let fname = "initmemloc"^(string_of_int eid) in
+  		let (ecall, cfunc) = initNormalLocations  eid cntxt fname in
+		let cprog' = (prepend_c_sequence  cprog ecall) in 
+		loop2 cprog' (cfunclist@[cfunc]) tail
+	in 
+  let (cprog', cfunclist'') = loop2 cprog [] eidlist in 
+  let cfunclist' = (cfunclist''@cfunclist) in
   let output = "encproject" in
   let _ =  (try Unix.rmdir output with Unix_error(err, _,_)->())  in
   let _ = (try Unix.mkdir output 0o777 with Unix_error(err, _,_)->())  in
@@ -381,6 +413,7 @@ let printCprog (cntxt, cprog, cfunclist) =
   let _ = Printf.fprintf oc "#include \"sgx_urts.h\"\n\n" in 
   (* Global memory locations *)
   let _  = printAppmemory oc cntxt in
+  let _ = printAppfunctions oc (cntxt, cfunclist') in
   let _  = Printf.fprintf oc " /* Application Entry */\n int SGX_CDECL main(int argc, char *argv[]) {\n" in
   (* Variable declaration *)
   let _  = printCtypes oc cntxt in 
@@ -395,16 +428,6 @@ let printCprog (cntxt, cprog, cfunclist) =
   let _ = loop1 eidlist in
   let _  = Printf.fprintf oc " /* End of enclave load. \n "  in
   let _  = Printf.fprintf oc "   Begin ECALLs from application.\n */"  in
-  let rec loop2 cprog cfunclist eidlist = match eidlist with
-	| [] -> (cprog, cfunclist)
-   	| eid::tail -> 
-		let fname = "initmemloc"^(string_of_int eid) in
-  		let (ecall, cfunc) = initNormalLocations  eid cntxt fname in
-		let cprog' = (prepend_c_sequence  cprog ecall) in 
-		loop2 cprog' (cfunclist@[cfunc]) tail
-	in 
-  let (cprog', cfunclist'') = loop2 cprog [] eidlist in 
-  let cfunclist' = (cfunclist''@cfunclist) in
   let _  = printCbody oc cprog' in
   let rec loop3 eidlist = begin match eidlist with
    |[] -> ()
@@ -412,14 +435,20 @@ let printCprog (cntxt, cprog, cfunclist) =
 		 loop3 tail
    end in
   let _ = loop3 eidlist in
-  let _  = Printf.fprintf oc " \n } /*End of main() */ \n" in
+  let _ = Printf.fprintf oc " \n } /*End of main() */ \n" in
   let rec createEnclavefiles eidlist= begin match eidlist with
 	|[] -> ()
  	|eid::tail -> 
 	  let eh = open_out (output^"/Enclave"^(string_of_int eid)^".h") in
 	  let _ = printEnclaveHeaders eh (cfunclist', eid) in 
 	  let ec = open_out (output^"/Enclave"^(string_of_int eid)^".c") in
-	  let _ = printEnclave ec (cntxt, cfunclist', eid) in 
+	  let eidcfunclist = List.filter (fun cfunc -> let mu = get_mode cfunc in
+						      let isenc = is_mode_enc mu in
+						      if not isenc then false
+						      else if (get_enc_id mu) = eid then
+								true
+							else false ) cfunclist' in
+	  let _ = printEnclave ec (cntxt, eidcfunclist, eid) in 
 	  let edl = open_out (output^"/Enclave"^(string_of_int eid)^".edl") in
 	  let _ = printEDL edl cfunclist' in
 	  close_out ec;

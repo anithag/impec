@@ -51,6 +51,10 @@ let get_mode = function
  |CLambda (mu, f, _ ,_,_) -> mu
  | _  -> raise (HelperError "Lambda expression expected")
 
+let get_retcstruct = function
+ |CLambda (mu, f, _ ,cst,_) -> cst
+ | _  -> raise (HelperError "Lambda expression expected")
+
 let get_enc_precontext (t:enclabeltype) =
    match t with
    |EBtFunc(m,gencpre,_,p,u, gencpost,_), q -> gencpre
